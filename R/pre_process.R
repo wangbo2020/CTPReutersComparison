@@ -2,6 +2,8 @@ library(data.table)
 library(dplyr)
 library(pipeR)
 
+source("R/id_parse.R")
+
 ctp <- fread("data/CTP/CTP.csv", header=FALSE)
 rts <- fread("data/Reuters/Reuters.csv", header=TRUE)
 
@@ -17,7 +19,8 @@ setnames(ctp, old=names(ctp),
 
 ctp <- mutate(ctp, HMS = as.ITime(Time, format="%H:%M:%S") ) %>>%
   mutate( HM = as.ITime(Time, format="%H:%M")) %>>% 
-  mutate( H = as.ITime(Time, format="%H"))
+  mutate( H = as.ITime(Time, format="%H")) %>>%
+  mutate( StdID = id_parse_ctp(InstrumentID) )
 
 # ctp.waste <- filter(ctp.all, HMS < as.ITime("11:30:00", format="%H:%M:%S") |
 #                HMS > as.ITime("15:30:00", format="%H:%M:%S") )
@@ -27,20 +30,6 @@ ctp <- mutate(ctp, HMS = as.ITime(Time, format="%H:%M:%S") ) %>>%
 
 # nrow(ctp.waste)
 # nrow(ctp)
-
-ctp.HM <- table(ctp[, HM])
-write.csv(ctp.HM, "report/ctp.HM.csv")
-
-ctp.HMS <- table(ctp[, HMS])
-write.csv(ctp.HMS, "report/ctp.HMS.csv")
-
-png("report/ctp.HM.png", width=1200, height=800)
-barplot(ctp.HM, col='darkblue', border=FALSE)
-dev.off()
-
-png("report/ctp.HMS.png", width=1600, height=1200)
-barplot(ctp.HMS, col='darkgreen', border=FALSE)
-dev.off()
 
 ## RTS ----
 
@@ -57,19 +46,10 @@ get.del.month <- function(RIC){
   return(del.month)
 }
 
-
 rts <- mutate(rts, Exchange = substr(RIC, 1, 1) ) %>>%
   mutate( Product = substr(RIC, 2, 3) ) %>>%
   mutate( DeliveryMonth = get.del.month(RIC) )
   
-head(rts)
-
-table( substr(RIC, 5, 5) )
-
-unique(RIC)
-
-
-unique(ctp[, IntrumentID])
 
 
 
