@@ -31,25 +31,14 @@ ctp <- mutate(ctp, HMS = as.ITime(Time, format="%H:%M:%S") ) %>>%
 # nrow(ctp.waste)
 # nrow(ctp)
 
-## RTS ----
+## RTS -------
 
-rts <- mutate(rts, MS = as.numeric(substr(Time, 9, 12)) * 1000 ) %>>%
+rts <- mutate(rts, MS.ori = as.numeric(substr(Time, 9, 12)) * 1000 ) %>>%
+  # mutate( MS = 500*(MS.ori %/% 500) ) %>>% 
   mutate( HMS = as.ITime( substr(Time, 1, 8), format="%H:%M:%S") ) %>>%
   mutate( HM = as.ITime(Time, format="%H:%M")) %>>% 
-  mutate( H = as.ITime(Time, format="%H"))
-
-get.del.month <- function(RIC){
-  RIC <- rts[, RIC]
-  RIC.4 <- substr(RIC, 4, 4)
-  del.month <- as.numeric( sapply(RIC.4, charToRaw) )
-  del.month <- del.month - 69
-  return(del.month)
-}
-
-rts <- mutate(rts, Exchange = substr(RIC, 1, 1) ) %>>%
-  mutate( Product = substr(RIC, 2, 3) ) %>>%
-  mutate( DeliveryMonth = get.del.month(RIC) )
-  
+  mutate( H = as.ITime(Time, format="%H")) %>>%
+  mutate( StdID = id_parse_rts(RIC) )
 
 
 

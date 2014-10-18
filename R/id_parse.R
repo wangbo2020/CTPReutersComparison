@@ -17,7 +17,8 @@ id_parse_ctp <- function(id){
 
 ## RIC ID Parser ---------------------------------
 
-lookup.table <- read.csv("id_list/RICs.csv", stringsAsFactors=FALSE, header=TRUE) %>>%
+lookup.table <- read.csv("id_list/RICs.csv", 
+                         stringsAsFactors=FALSE, header=TRUE) %>>%
   filter( str_length(StdID) != 0 )
 
 id_parse_rts <- function(RIC){
@@ -26,8 +27,8 @@ id_parse_rts <- function(RIC){
     str_sub( start=1, end=-2)
   
   product <- sapply(pre.suffix, FUN=function(pre){
-    nline <- match(pre, lookup.table$RIC)
-    product <- lookup.table[nline, "StdID"]
+    row <- match(pre, lookup.table$RIC)
+    product <- lookup.table[row, "StdID"]
     return(product)
   })
   
