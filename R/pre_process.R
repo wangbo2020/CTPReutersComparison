@@ -22,6 +22,8 @@ ctp <- mutate(ctp, HMS = as.ITime(Time, format="%H:%M:%S") ) %>>%
   mutate( H = as.ITime(Time, format="%H")) %>>%
   mutate( StdID = id_parse_ctp(InstrumentID) )
 
+setkey(ctp, Time, StdID)
+
 # ctp.waste <- filter(ctp.all, HMS < as.ITime("11:30:00", format="%H:%M:%S") |
 #                HMS > as.ITime("15:30:00", format="%H:%M:%S") )
 # 
@@ -40,6 +42,5 @@ rts <- mutate(rts, MS.ori = as.numeric(substr(Time, 9, 12)) * 1000 ) %>>%
   mutate( H = as.ITime(Time, format="%H")) %>>%
   mutate( StdID = id_parse_rts(RIC) )
 
-
-
+setkey(rts, HMS, StdID)
 
