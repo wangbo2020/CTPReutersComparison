@@ -13,7 +13,8 @@ rts.StdID <- read.csv("report/rts.StdID.csv", header=TRUE) %>>%
 
 StdID.nrow <- merge(ctp.StdID, rts.StdID, by="StdID", all=TRUE)
 
-rts.oi <- select(rts, StdID, Time, HMS, OI.Volume) %>>%
+rts.pair <- select(rts, StdID, Time, HMS, Trade.Price, Trade.Volume, OI.Volume,
+                   Quote.AskPrice, Quote.AskSize, Quote.BidPrice, Quote.BidSize) %>>%
   filter( !is.na(StdID) ) %>>%
   mutate( MS.ori = 1000*as.numeric( str_sub(Time, start=-4, end=-1) ) ) %>>%
   mutate( MS = 500*ifelse(MS.ori <= 500, 1, 0) ) %>>%
@@ -21,11 +22,16 @@ rts.oi <- select(rts, StdID, Time, HMS, OI.Volume) %>>%
   
 # rts.oi <- rts.oi[ rts.oi[, MS.ori == max(MS.ori), by=list(StdID, HMS, MS) ][, V1] ]
 
-ctp.oi <- select(ctp, StdID, HMS, MS, OI) %>>%
+ctp.pair <- select(ctp, StdID, HMS, MS, LastPrice, Volume, OI, 
+                   AskPrc.1, AskVol.1, BidPrc.1, BidVol.1) %>>%
   filter( HMS >= as.ITime("09:00:00", format="%H:%M:%S") ) %>>%
   filter( HMS <= as.ITime("15:15:00", format="%H:%M:%S") ) %>>%
   setkey( "StdID", "HMS", "MS")
 
-join.oi <- inner_join(rts.oi, ctp.oi, by=c("StdID", "HMS", "MS"), all=TRUE)
+compare <- left_join(rts.pair, ctp.pair, by=c("StdID", "HMS", "MS"), all=TRUE)
 
-View( head(join.oi, 500) )
+
+View( head(compare, 500) )
+
+write.csv(compare, "report/compare.csv", row.names=FALSE)
+
