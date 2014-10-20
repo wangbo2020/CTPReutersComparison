@@ -4,7 +4,7 @@ library(stringr)
 library(dplyr)
 library(reshape2)
 
-# source(pre_process)
+ source("R/pre_process.R")
 
 # ctp.StdID <- read.csv("report/ctp.StdID.csv", header=TRUE) %>>%
 #   setnames( old=names(.), new=c("n", "StdID", "Nrow"))
@@ -41,8 +41,10 @@ library(reshape2)
 rts.oi <- select(rts, StdID, Time, HMS, OI.Volume) %>>%
   filter( !is.na(StdID) ) %>>%
   mutate( MS.ori = 1000*as.numeric( str_sub(Time, start=-4, end=-1) ) ) %>>%
-  mutate( MS = 500*ifelse(MS.ori <= 500, 1, 0) ) %>>%
-  filter( rts.oi[, MS.ori == max(MS.ori), by=list(StdID, HMS, MS)][, V1] ) %>>%
+  mutate( MS = 500*ifelse(MS.ori <= 500, 1, 0) )
+
+rts.oi <- filter(rts.oi,
+                 rts.oi[, MS.ori == max(MS.ori), by=list(StdID, HMS, MS)][, V1] ) %>>%
   setnames( old="HMS", new="HMS.ori") %>>%
   mutate( HMS = ifelse(MS == 0, HMS.ori + 1, HMS.ori ) ) %>>%
   mutate( HMS = as.ITime(HMS, origin=as.ITime("16:00:00") ) ) %>>%
@@ -67,8 +69,10 @@ write.csv(oi.join, "report/oi.join.csv", row.names=FALSE)
 rts.prc <- select(rts, StdID, Time, HMS, Trade.Price) %>>%
   filter( !is.na(StdID) ) %>>%
   mutate( MS.ori = 1000*as.numeric( str_sub(Time, start=-4, end=-1) ) ) %>>%
-  mutate( MS = 500*ifelse(MS.ori <= 500, 1, 0) ) %>>%
-  filter( rts.oi[, MS.ori == max(MS.ori), by=list(StdID, HMS, MS)][, V1] ) %>>%
+  mutate( MS = 500*ifelse(MS.ori <= 500, 1, 0) )
+
+rts.prc <- filter(rts.prc,
+                 rts.prc[, MS.ori == max(MS.ori), by=list(StdID, HMS, MS)][, V1] ) %>>%
   setnames( old="HMS", new="HMS.ori") %>>%
   mutate( HMS = ifelse(MS == 0, HMS.ori + 1, HMS.ori ) ) %>>%
   mutate( HMS = as.ITime(HMS, origin=as.ITime("16:00:00") ) ) %>>%
@@ -87,5 +91,31 @@ View(head(prc.join, 500))
 
 write.csv(prc.join, "report/prc.join.csv", row.names=FALSE)
 
+library(foreach)
+
+ctp.id <- select(ctp.oi, StdID) %>>% unique()
+
+foreach(i=1:nrow(ctp.id) ) %do% {
+  id.i <- as.character(ctp.id[i])
+  
+  ctp.oi.i <- filter(ctp.oi, StdID == id.i)  
+  rts.oi.i <- filter(rts.oi, StdID == id.i)
+  
+  ctp.prc.i <- filter(ctp.prc, StdID == id.i)  
+  rts.prc.i <- filter(rts.prc, StdID == id.i)
+  
+  png( paste0("report/plot/OI/",  id.i, ".png"), width=1200, height=800 )
+  plot(ctp.oi.i[, HMS], ctp.oi.i[, OI], pch=18, main=as.character(ctp.id[i]), 
+       xlab="HMS", ylab="OI", col="darkblue")
+  points(rts.oi.i[, HMS], rts.oi.i[, OI.Volume], pch=20, cex=0.1, col='lightblue')
+  dev.off()
+  
+  png( paste0("report/plot/Prc/",  id.i, ".png"), width=1200, height=800 )
+  plot(ctp.prc.i[, HMS], ctp.prc.i[, LastPrice], pch=18, main=as.character(ctp.id[i]), 
+       xlab="HMS", ylab="OI", col="darkblue")
+  points(rts.prc.i[, HMS], rts.prc.i[, Trade.Price], pch=20, cex=0.1, col='lightblue')
+  dev.off()
+  
+}
 
 
